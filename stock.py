@@ -58,10 +58,15 @@ if selected_tab == "📈 Stock Screener":
                     stock.index = stock.index.tz_localize('UTC')
                 else:
                     stock.index = stock.index.tz_convert('UTC')
-            return stock
+                return stock
+            else:
+                st.write(f"Debug: No data returned for {symbol} with period {period}")
+                return pd.DataFrame(columns=['Open', 'Close', 'High', 'Low', 'Volume'])
+    
         except Exception as e:
             st.error(f"Error fetching data for {symbol}: {e}")
-            return pd.DataFrame()
+            return pd.DataFrame(columns=['Open', 'Close', 'High', 'Low', 'Volume'])
+
 
 
     @st.cache_data(ttl=3600)  # Cache full dataset for All-Time High
@@ -123,12 +128,44 @@ if selected_tab == "📈 Stock Screener":
 
 
     def check_conditions_and_get_percentage_change(stock_data):
-        stock_data = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
-        last_week = stock_data.iloc[-2]
-        current_week = stock_data.iloc[-1]
-        percentage_change = ((last_week['Close'] - last_week['Open']) / last_week['Open']) * 100
-        week_to_week_change = ((current_week['Close'] - last_week['Close']) / last_week['Close']) * 100
-        return percentage_change, week_to_week_change, last_week
+        """
+        Calculate weekly percentage changes based on resampled data.
+        """
+        if stock_data.empty:
+            st.write("Debug: stock_data is empty.")
+            return None, None, None
+    
+        # Ensure required columns exist
+        if 'Open' not in stock_data.columns or 'Close' not in stock_data.columns:
+            st.write("Debug: Required columns ['Open', 'Close'] are missing.")
+            return None, None, None
+    
+        # Ensure index is datetime
+        if not isinstance(stock_data.index, pd.DatetimeIndex):
+            st.write("Debug: Converting index to DatetimeIndex.")
+            stock_data.index = pd.to_datetime(stock_data.index)
+    
+        try:
+            # Resample to weekly frequency
+            resampled_data = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
+    
+            if resampled_data.empty:
+                st.write("Debug: Resampled data is empty.")
+                return None, None, None
+    
+            last_week = resampled_data.iloc[-2]
+            current_week = resampled_data.iloc[-1]
+    
+            # Calculate percentage changes
+            percentage_change = ((last_week['Close'] - last_week['Open']) / last_week['Open']) * 100
+            week_to_week_change = ((current_week['Close'] - last_week['Close']) / last_week['Close']) * 100
+    
+            return percentage_change, week_to_week_change, last_week
+    
+        except Exception as e:
+            st.write("Debug: Exception in check_conditions_and_get_percentage_change:", str(e))
+            return None, None, None
+
 
 
     def check_52_week_condition(stock_data):
