@@ -1227,7 +1227,7 @@ if selected_tab == "📈 Stock Screener":
     # Function to download stock data
     @st.cache
     def download_stock_data(stock_symbol):
-        data = pdr.get_data_yahoo(stock_symbol, start="2000-01-01", end="2024-01-01")
+        data = yf.download(stock_symbol, start="2000-01-01", end="2024-01-01")
         return data
 
     # Function to calculate monthly percentage change (based on 1st day opening and last day closing)
