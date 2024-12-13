@@ -171,22 +171,29 @@ if selected_tab == "📈 Stock Screener":
         Calculate All-Time High (ATH) and check if the current price is below the high limit
         of 50%-70% down from ATH.
         """
-        if stock_data_full.empty:  # Ensure the DataFrame is not empty
+        if stock_data_full.empty or 'High' not in stock_data_full.columns:
+            # Return early if the data is invalid
             return False, None, None, None, None
     
-        ath = stock_data_full['High'].max()  # All-Time High value
+        # Ensure ath is a scalar value (not a Series)
+        ath = stock_data_full['High'].max()
+        if pd.isna(ath) or not np.isfinite(ath):
+            # If ath is NaN or invalid, return defaults
+            return False, None, None, None, None
     
-        # Check if ath is valid (not NaN)
-        if pd.notna(ath) and ath > 0:
-            current_price = stock_data_full['Close'].iloc[-1]
-            low_limit = ath * 0.50
-            high_limit = ath * 0.70
+        # Ensure the current price is also valid
+        current_price = stock_data_full['Close'].iloc[-1] if 'Close' in stock_data_full.columns else None
+        if pd.isna(current_price) or not np.isfinite(current_price):
+            return False, None, None, None, None
     
-            # Condition met if current price is below the high limit
-            condition_met = current_price <= high_limit
-            return condition_met, current_price, low_limit, high_limit, ath
+        # Calculate limits
+        low_limit = ath * 0.50
+        high_limit = ath * 0.70
     
-        return False, None, None, None, None
+        # Determine if the condition is met
+        condition_met = current_price <= high_limit
+        return condition_met, current_price, low_limit, high_limit, ath
+
 
 
 
