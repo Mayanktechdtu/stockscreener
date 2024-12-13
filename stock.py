@@ -129,41 +129,20 @@ if selected_tab == "📈 Stock Screener":
 
     def check_conditions_and_get_percentage_change(stock_data):
         """
-        Calculate weekly percentage changes based on resampled data.
+        Check weekly percentage changes and calculate the percentage difference.
         """
-        if stock_data.empty:
-            st.write("Debug: stock_data is empty.")
-            return None, None, None
-    
-        # Ensure required columns exist
-        if 'Open' not in stock_data.columns or 'Close' not in stock_data.columns:
-            st.write("Debug: Required columns ['Open', 'Close'] are missing.")
-            return None, None, None
-    
-        # Ensure index is datetime
-        if not isinstance(stock_data.index, pd.DatetimeIndex):
-            st.write("Debug: Converting index to DatetimeIndex.")
-            stock_data.index = pd.to_datetime(stock_data.index)
-    
         try:
-            # Resample to weekly frequency
-            resampled_data = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
+            if stock_data.empty or not {'Open', 'Close'}.issubset(stock_data.columns):
+                raise KeyError("Column(s) ['Close', 'Open'] do not exist in the DataFrame.")
     
-            if resampled_data.empty:
-                st.write("Debug: Resampled data is empty.")
-                return None, None, None
-    
-            last_week = resampled_data.iloc[-2]
-            current_week = resampled_data.iloc[-1]
-    
-            # Calculate percentage changes
+            stock_data = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
+            last_week = stock_data.iloc[-2]
+            current_week = stock_data.iloc[-1]
             percentage_change = ((last_week['Close'] - last_week['Open']) / last_week['Open']) * 100
             week_to_week_change = ((current_week['Close'] - last_week['Close']) / last_week['Close']) * 100
-    
             return percentage_change, week_to_week_change, last_week
-    
         except Exception as e:
-            st.write("Debug: Exception in check_conditions_and_get_percentage_change:", str(e))
+            st.error(f"Exception in check_conditions_and_get_percentage_change: {e}")
             return None, None, None
 
 
@@ -208,37 +187,25 @@ if selected_tab == "📈 Stock Screener":
         Calculate All-Time High (ATH) and check if the current price is below the high limit
         of 50%-70% down from ATH.
         """
-        if stock_data_full.empty:
-            st.write("Debug: stock_data_full is empty.")
-            return False, None, None, None, None
-    
-        if 'High' not in stock_data_full.columns or 'Close' not in stock_data_full.columns:
-            st.write("Debug: Required columns 'High' or 'Close' are missing.")
-            return False, None, None, None, None
-    
         try:
-            # Calculate ATH (ensure scalar conversion)
-            ath = stock_data_full['High'].max()
-            if pd.isna(ath) or not np.isfinite(ath):
-                st.write("Debug: ATH is invalid or NaN:", ath)
+            if stock_data_full.empty:  # Ensure the DataFrame is not empty
                 return False, None, None, None, None
     
-            # Ensure current price is valid
-            current_price = stock_data_full['Close'].iloc[-1]
-            if pd.isna(current_price) or not np.isfinite(current_price):
-                st.write("Debug: Current price is invalid or NaN:", current_price)
-                return False, None, None, None, None
+            ath = stock_data_full['High'].max()  # All-Time High value
     
-            # Calculate limits
-            low_limit = ath * 0.50
-            high_limit = ath * 0.70
+            # Ensure ath is a valid scalar
+            if pd.notna(ath) and ath > 0:
+                current_price = stock_data_full['Close'].iloc[-1]
+                low_limit = ath * 0.50
+                high_limit = ath * 0.70
     
-            # Check the condition
-            condition_met = current_price <= high_limit
-            return condition_met, current_price, low_limit, high_limit, ath
+                # Condition met if current price is below the high limit
+                condition_met = current_price <= high_limit
+                return condition_met, current_price, low_limit, high_limit, ath
     
+            return False, None, None, None, None
         except Exception as e:
-            st.write("Debug: Exception in check_all_time_high_condition:", str(e))
+            st.error(f"Exception in check_all_time_high_condition: {e}")
             return False, None, None, None, None
 
 
@@ -282,11 +249,28 @@ if selected_tab == "📈 Stock Screener":
 
 
     def check_rsi_condition(stock_data):
-        rsi_daily = calculate_rsi(stock_data)
-        stock_data_weekly = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
-        rsi_weekly = calculate_rsi(stock_data_weekly)
-        condition_met = (rsi_daily.iloc[-1] < 30) or (rsi_weekly.iloc[-1] < 30)
-        return condition_met, rsi_daily, rsi_weekly
+        """
+        Check RSI conditions on daily and weekly data.
+        """
+        try:
+            # Validate stock_data integrity
+            if stock_data.empty or not {'Open', 'Close'}.issubset(stock_data.columns):
+                raise KeyError("Column(s) ['Close', 'Open'] do not exist in the DataFrame.")
+    
+            rsi_daily = calculate_rsi(stock_data)
+    
+            # Resample weekly data and validate integrity
+            stock_data_weekly = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
+            if stock_data_weekly.empty:
+                raise ValueError("Weekly resampled data is empty.")
+    
+            rsi_weekly = calculate_rsi(stock_data_weekly)
+            condition_met = (rsi_daily.iloc[-1] < 30) or (rsi_weekly.iloc[-1] < 30)
+            return condition_met, rsi_daily, rsi_weekly
+        except Exception as e:
+            st.error(f"Exception in check_rsi_condition: {e}")
+            return False, None, None
+
 
 
     def check_ema_condition(stock_data):
