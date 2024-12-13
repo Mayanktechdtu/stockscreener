@@ -171,28 +171,39 @@ if selected_tab == "📈 Stock Screener":
         Calculate All-Time High (ATH) and check if the current price is below the high limit
         of 50%-70% down from ATH.
         """
-        if stock_data_full.empty or 'High' not in stock_data_full.columns:
-            # Return early if the data is invalid
+        if stock_data_full.empty:
+            st.write("Debug: stock_data_full is empty.")
             return False, None, None, None, None
     
-        # Ensure ath is a scalar value (not a Series)
-        ath = stock_data_full['High'].max()
-        if pd.isna(ath) or not np.isfinite(ath):
-            # If ath is NaN or invalid, return defaults
+        if 'High' not in stock_data_full.columns or 'Close' not in stock_data_full.columns:
+            st.write("Debug: Required columns 'High' or 'Close' are missing.")
             return False, None, None, None, None
     
-        # Ensure the current price is also valid
-        current_price = stock_data_full['Close'].iloc[-1] if 'Close' in stock_data_full.columns else None
-        if pd.isna(current_price) or not np.isfinite(current_price):
+        try:
+            # Calculate ATH (ensure scalar conversion)
+            ath = stock_data_full['High'].max()
+            if pd.isna(ath) or not np.isfinite(ath):
+                st.write("Debug: ATH is invalid or NaN:", ath)
+                return False, None, None, None, None
+    
+            # Get the current price
+            current_price = stock_data_full['Close'].iloc[-1]
+            if pd.isna(current_price) or not np.isfinite(current_price):
+                st.write("Debug: Current price is invalid or NaN:", current_price)
+                return False, None, None, None, None
+    
+            # Calculate limits
+            low_limit = ath * 0.50
+            high_limit = ath * 0.70
+    
+            # Check the condition
+            condition_met = current_price <= high_limit
+            return condition_met, current_price, low_limit, high_limit, ath
+    
+        except Exception as e:
+            st.write("Debug: An exception occurred in check_all_time_high_condition:", e)
             return False, None, None, None, None
-    
-        # Calculate limits
-        low_limit = ath * 0.50
-        high_limit = ath * 0.70
-    
-        # Determine if the condition is met
-        condition_met = current_price <= high_limit
-        return condition_met, current_price, low_limit, high_limit, ath
+
 
 
 
