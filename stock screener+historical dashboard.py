@@ -106,6 +106,7 @@ if selected_tab == "📈 Stock Screener":
             return round(three_month_change, 2)
         else:
             return None
+            
 
 
     def get_nearest_trading_day(data, target_date):
@@ -135,7 +136,9 @@ if selected_tab == "📈 Stock Screener":
         upper_bound = high_52_week - 0.50 * range_52_week
 
 
-        current_price = stock_data['Close'][-1]
+        # current_price = stock_data['Close'][-1]
+        current_price = stock_data['Close'].iloc[-1]
+
         condition_met = current_price <= upper_bound
         return condition_met, lower_bound, upper_bound, high_52_week, low_52_week
 
@@ -145,7 +148,9 @@ if selected_tab == "📈 Stock Screener":
         low_52_week = stock_data['Low'].min()
         fib_level_value_2 = high_52_week - fib_level_2 * (high_52_week - low_52_week)
         fib_level_value_1 = high_52_week - fib_level_1 * (high_52_week - low_52_week)
-        current_price = stock_data['Close'][-1]
+        # current_price = stock_data['Close'][-1]
+        current_price = stock_data['Close'].iloc[-1]
+
         condition_met = current_price <= fib_level_value_1
         return condition_met, current_price, fib_level_value_2, fib_level_value_1, high_52_week
 
@@ -182,7 +187,9 @@ if selected_tab == "📈 Stock Screener":
 
     def check_52_week_high_yearly_condition(stock_data):
         high_52_week = stock_data['High'].max()
-        current_price = stock_data['Close'][-1]
+        # current_price = stock_data['Close'][-1]
+        current_price = stock_data['Close'].iloc[-1]
+
         low_limit = high_52_week * 0.50
         high_limit = high_52_week * 0.60
         condition_met = current_price <= high_limit
@@ -202,7 +209,9 @@ if selected_tab == "📈 Stock Screener":
         ema_200, std_dev = calculate_ema(stock_data)
     
         # Get the current price
-        current_price = stock_data['Close'][-1]
+        # current_price = stock_data['Close'][-1]
+        current_price = stock_data['Close'].iloc[-1]
+
     
         # Calculate ranges for -1 and -2 standard deviations
         lower_bound_1_std = ema_200.iloc[-1] - std_dev.iloc[-1]  # -1 Std Dev
@@ -424,7 +433,8 @@ if selected_tab == "📈 Stock Screener":
         low_52_week_sidebar = round(data_sidebar['Low'].iloc[-252:].min(), 2)
     
         # Calculate today's price change
-        todays_change = round(calculate_percentage_change(current_price_sidebar, data_sidebar['Close'][-2]), 2)
+        # todays_change = round(calculate_percentage_change(current_price_sidebar, data_sidebar['Close'][-2]), 2)
+        todays_change = round(calculate_percentage_change(current_price_sidebar, data_sidebar['Close'].iloc[-2]), 2)
 
 
         # Display details in the sidebar (specific to the selected stock)
@@ -562,7 +572,7 @@ if selected_tab == "📈 Stock Screener":
                 "Met Additional Conditions": ', '.join(met_additional_conditions),
                 "Score": conditions_score,
                 "Sector": sector_mapping.get(symbol, 'Unmapped'),
-                "Current Price": round(data['Close'][-1], 2),
+                "Current Price": round(data['Close'].iloc[-1], 2),
                 "Today's Change": todays_change,
                 "Weekly % Change": round(percentage_change, 2),
                 "Monthly % Change": monthly_change,
@@ -732,7 +742,7 @@ if selected_tab == "📈 Stock Screener":
                 "Conditions Met": conditions_html,
                 "Score": conditions_score,
                 "Sector": index_sector_mapping.get(index, ''),  # Use blank if sector not provided
-                "Current Price": round(data['Close'][-1], 2),
+                "Current Price": round(data['Close'].iloc[-1], 2),
                 "Today's Change": todays_change,
                 "Weekly % Change": round(percentage_change, 2),
                 "Monthly % Change": monthly_change,
@@ -1416,6 +1426,8 @@ elif selected_tab == "📊 Historical dashboard":
     # Function to process stock data
     def process_stock_data(ticker):
         stock_data = yf.download(ticker, start="2015-01-01", end=current_date, interval="1mo")
+        # stock_data = yf.download(ticker, start="2015-01-01", end=current_date, interval="1d")
+
         stock_data['Monthly % Change'] = ((stock_data['Close'] - stock_data['Open']) / stock_data['Open']) * 100
         stock_data['Year'] = stock_data.index.year
         stock_data['Month'] = stock_data.index.strftime('%B')
@@ -1577,7 +1589,3 @@ elif selected_tab == "📊 Historical dashboard":
 
     # Plot Bar Chart
     plot_bar_chart(month_data, selected_month)
-
-        
-        
-
