@@ -167,27 +167,49 @@ if selected_tab == "📈 Stock Screener":
         return check_fibonacci_condition(recent_data, fib_level_2, fib_level_1)
 
 
+    # def check_all_time_high_condition(stock_data_full):
+    #     """
+    #     Calculate All-Time High (ATH) and check if the current price is below the high limit of 50%-60% range of ATH.
+    #     """
+    #     ath = stock_data_full['High'].max() if not stock_data_full.empty else None
+
+
+    #     if ath:
+    #         current_price = stock_data_full['Close'].iloc[-1]
+    #         low_limit = ath * 0.50
+    #         high_limit = ath * 0.70
+
+
+    #         # Condition met if current price is below the high limit
+    #         condition_met = current_price <= high_limit
+
+
+    #         return condition_met, current_price, low_limit, high_limit, ath
+
+
+    #     return False, None, None, None, None
     def check_all_time_high_condition(stock_data_full):
-        """
-        Calculate All-Time High (ATH) and check if the current price is below the high limit of 50%-60% range of ATH.
-        """
-        ath = stock_data_full['High'].max() if not stock_data_full.empty else None
-
-
-        if ath:
-            current_price = stock_data_full['Close'].iloc[-1]
-            low_limit = ath * 0.50
-            high_limit = ath * 0.70
-
-
-            # Condition met if current price is below the high limit
-            condition_met = current_price <= high_limit
-
-
-            return condition_met, current_price, low_limit, high_limit, ath
-
-
+    """
+    Calculate All-Time High (ATH) and check if the current price is below the high limit
+    of 50%-70% down from ATH.
+    """
+    if stock_data_full.empty:  # Ensure the DataFrame is not empty
         return False, None, None, None, None
+
+    ath = stock_data_full['High'].max()  # All-Time High value
+
+    # Check if ath is valid (not NaN)
+    if pd.notna(ath) and ath > 0:
+        current_price = stock_data_full['Close'].iloc[-1]
+        low_limit = ath * 0.50
+        high_limit = ath * 0.70
+
+        # Condition met if current price is below the high limit
+        condition_met = current_price <= high_limit
+        return condition_met, current_price, low_limit, high_limit, ath
+
+    return False, None, None, None, None
+
 
 
     def check_52_week_high_yearly_condition(stock_data):
