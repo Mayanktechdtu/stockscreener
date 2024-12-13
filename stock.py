@@ -186,7 +186,7 @@ if selected_tab == "📈 Stock Screener":
                 st.write("Debug: ATH is invalid or NaN:", ath)
                 return False, None, None, None, None
     
-            # Get the current price
+            # Ensure current price is valid
             current_price = stock_data_full['Close'].iloc[-1]
             if pd.isna(current_price) or not np.isfinite(current_price):
                 st.write("Debug: Current price is invalid or NaN:", current_price)
@@ -201,8 +201,9 @@ if selected_tab == "📈 Stock Screener":
             return condition_met, current_price, low_limit, high_limit, ath
     
         except Exception as e:
-            st.write("Debug: An exception occurred in check_all_time_high_condition:", e)
+            st.write("Debug: Exception in check_all_time_high_condition:", str(e))
             return False, None, None, None, None
+
 
 
 
