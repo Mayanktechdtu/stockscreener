@@ -12,7 +12,7 @@ from packaging.version import Version
 sys.modules['distutils.version'] = sys.modules['packaging.version']
 LooseVersion = Version
 
-from pandas_datareader import data as pdr
+# from pandas_datareader import data as pdr
 from sklearn.linear_model import LinearRegression
 import numpy as np
 
@@ -1213,7 +1213,7 @@ if selected_tab == "📈 Stock Screener":
 
 
     # Override Yahoo Finance restrictions
-    yf.pdr_override()
+    # yf.pdr_override()
 
     # Define the list of Nifty 50 top 5 stock symbols (you can update this list)
     stocks = {
