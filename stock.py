@@ -7,6 +7,11 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.colors import TwoSlopeNorm
+import sys
+from packaging.version import Version
+sys.modules['distutils.version'] = sys.modules['packaging.version']
+LooseVersion = Version
+
 from pandas_datareader import data as pdr
 from sklearn.linear_model import LinearRegression
 import numpy as np
