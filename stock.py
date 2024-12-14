@@ -686,7 +686,7 @@ if selected_tab == "📈 Stock Screener":
                 "Monthly % Change": monthly_change,
                 "3-Month % Change": three_month_change,
                 "Week-to-Week % Change": round(week_to_week_change, 2),
-                "Last Week Close": round(last_week['Close'], 2),
+                "Last Week Close": round(last_week['Close'], 2) if last_week is not None and 'Close' in last_week else None,
                 "52-Week High": round(high_52_week, 2),
                 "52-Week Low": round(low_52_week, 2),
                 "52-Week High Range (40-50% down from 52-Week High)": f"₹{round(lower_bound, 2)} - ₹{round(upper_bound, 2)}",
@@ -701,7 +701,7 @@ if selected_tab == "📈 Stock Screener":
                 "Weekly RSI": round(rsi_weekly.iloc[-1], 2) if len(rsi_weekly) > 0 else None,
             }
 
-
+            st.write("Debug Last Week:", last_week)
             # Append the results
             if conditions_met_count >= 2:
                 atleast_two_met_stocks.append(result)
