@@ -790,8 +790,32 @@ if selected_tab == "📈 Stock Screener":
 
 
     # Top gainers and losers based on today's percentage change in price
-    df_top_gainers = df_all_stocks.sort_values(by="Today's Change", ascending=False).head(5)
-    df_top_losers = df_all_stocks.sort_values(by="Today's Change", ascending=True).head(5)
+    # df_top_gainers = df_all_stocks.sort_values(by="Today's Change", ascending=False).head(5)
+
+    # Ensure "Today's Change" column exists and is valid
+    if "Today's Change" in df_all_stocks.columns:
+        # Drop rows with NaN in "Today's Change" column (optional: fill with 0 instead)
+        df_all_stocks = df_all_stocks.dropna(subset=["Today's Change"]).copy()
+        # Alternatively, fill NaN values with 0
+        # df_all_stocks["Today's Change"] = df_all_stocks["Today's Change"].fillna(0)
+    
+        # Ensure all values in "Today's Change" are numeric
+        df_all_stocks["Today's Change"] = pd.to_numeric(df_all_stocks["Today's Change"], errors="coerce")
+    
+        # Sort by "Today's Change" and get top 5 gainers
+        df_top_gainers = df_all_stocks.sort_values(by="Today's Change", ascending=False).head(5)
+        df_top_losers = df_all_stocks.sort_values(by="Today's Change", ascending=True).head(5)
+
+        # Display or use the result as needed
+        st.write("Top 5 Gainers", df_top_gainers)
+    else:
+        st.warning("Column 'Today's Change' is missing in the dataset.")
+
+        st.write("Top 5 Looser", df_top_losers)
+    else:
+        st.warning("Column 'Today's Change' is missing in the dataset.")
+    
+    # df_top_losers = df_all_stocks.sort_values(by="Today's Change", ascending=True).head(5)
 
 
     # Add top gainers and losers to main dashboard
