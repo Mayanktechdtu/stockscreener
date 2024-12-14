@@ -639,18 +639,44 @@ if selected_tab == "📈 Stock Screener":
             cond_weekly_change = (percentage_change is not None and percentage_change < -5)
             cond_3month_change = (three_month_change is not None and three_month_change < -10)
             
-            main_conditions_met = [
-                cond_52_week, cond_fib_52_week, cond_ath, cond_52_week_year, 
-                cond_monthly_change, cond_3month_change, cond_weekly_change
-            ]
+            # main_conditions_met = [
+            #     cond_52_week, cond_fib_52_week, cond_ath, cond_52_week_year, 
+            #     cond_monthly_change, cond_3month_change, cond_weekly_change
+            # ]
 
-            additional_conditions_met = [cond_rsi, cond_ema]
-            conditions_met_count = sum(main_conditions_met) + sum(additional_conditions_met)
+            # additional_conditions_met = [cond_rsi, cond_ema]
+            # conditions_met_count = sum(main_conditions_met) + sum(additional_conditions_met)
+            # conditions_html = ''.join(['✓' if cond else '✗' for cond in main_conditions_met + additional_conditions_met])
+            # conditions_score = f"{conditions_met_count}/{len(main_conditions_met) + len(additional_conditions_met)}"
+            # met_main_conditions = [label for label, cond in zip(main_condition_labels, main_conditions_met) if cond]
+            # met_additional_conditions = [label for label, cond in zip(additional_condition_labels, additional_conditions_met) if cond]
+
+            # Ensure conditions are explicitly evaluated as booleans
+            main_conditions_met = [
+                bool(cond_52_week), 
+                bool(cond_fib_52_week), 
+                bool(cond_ath), 
+                bool(cond_52_week_year), 
+                bool(cond_monthly_change), 
+                bool(cond_3month_change), 
+                bool(cond_weekly_change)
+            ]
+            
+            additional_conditions_met = [
+                bool(cond_rsi), 
+                bool(cond_ema)
+            ]
+            
+            # Convert conditions to '✓' for True and '✗' for False
             conditions_html = ''.join(['✓' if cond else '✗' for cond in main_conditions_met + additional_conditions_met])
+            
+            # Calculate the score
+            conditions_met_count = sum(main_conditions_met) + sum(additional_conditions_met)
             conditions_score = f"{conditions_met_count}/{len(main_conditions_met) + len(additional_conditions_met)}"
+            
+            # Generate lists of met conditions
             met_main_conditions = [label for label, cond in zip(main_condition_labels, main_conditions_met) if cond]
             met_additional_conditions = [label for label, cond in zip(additional_condition_labels, additional_conditions_met) if cond]
-
 
             result = {
                 "S.No": idx,
