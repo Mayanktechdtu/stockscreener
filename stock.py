@@ -808,9 +808,6 @@ if selected_tab == "📈 Stock Screener":
 
         # Display or use the result as needed
         st.write("Top 5 Gainers", df_top_gainers)
-    else:
-        st.warning("Column 'Today's Change' is missing in the dataset.")
-
         st.write("Top 5 Looser", df_top_losers)
     else:
         st.warning("Column 'Today's Change' is missing in the dataset.")
