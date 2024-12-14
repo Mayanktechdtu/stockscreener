@@ -136,14 +136,23 @@ if selected_tab == "📈 Stock Screener":
                 raise KeyError("Column(s) ['Close', 'Open'] do not exist in the DataFrame.")
     
             stock_data = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
+            
+            # Ensure there are at least two weeks of data
+            if len(stock_data) < 2:
+                return None, None, None
+    
             last_week = stock_data.iloc[-2]
             current_week = stock_data.iloc[-1]
-            percentage_change = ((last_week['Close'] - last_week['Open']) / last_week['Open']) * 100
-            week_to_week_change = ((current_week['Close'] - last_week['Close']) / last_week['Close']) * 100
-            return percentage_change, week_to_week_change, last_week
+    
+            percentage_change = ((last_week['Close'] - last_week['Open']) / last_week['Open']) * 100 if last_week['Open'] != 0 else None
+            week_to_week_change = ((current_week['Close'] - last_week['Close']) / last_week['Close']) * 100 if last_week['Close'] != 0 else None
+    
+            return percentage_change or 0, week_to_week_change or 0, last_week
         except Exception as e:
             st.error(f"Exception in check_conditions_and_get_percentage_change: {e}")
-            return None, None, None
+            return 0, 0, None
+
+
 
 
 
@@ -616,15 +625,25 @@ if selected_tab == "📈 Stock Screener":
 
 
             # Additional main conditions
+            # cond_monthly_change = (monthly_change is not None and monthly_change < -8)
+            # cond_weekly_change = (percentage_change < -5)
+            # cond_3month_change = (three_month_change is not None and three_month_change < -10)
+
+
+            # # Collect results
+            # main_conditions_met = [
+            #     cond_52_week, cond_fib_52_week, cond_ath, cond_52_week_year, cond_monthly_change, cond_3month_change, cond_weekly_change
+            # ]
+            # Additional main conditions
             cond_monthly_change = (monthly_change is not None and monthly_change < -8)
-            cond_weekly_change = (percentage_change < -5)
+            cond_weekly_change = (percentage_change is not None and percentage_change < -5)
             cond_3month_change = (three_month_change is not None and three_month_change < -10)
-
-
-            # Collect results
+            
             main_conditions_met = [
-                cond_52_week, cond_fib_52_week, cond_ath, cond_52_week_year, cond_monthly_change, cond_3month_change, cond_weekly_change
+                cond_52_week, cond_fib_52_week, cond_ath, cond_52_week_year, 
+                cond_monthly_change, cond_3month_change, cond_weekly_change
             ]
+
             additional_conditions_met = [cond_rsi, cond_ema]
             conditions_met_count = sum(main_conditions_met) + sum(additional_conditions_met)
             conditions_html = ''.join(['✓' if cond else '✗' for cond in main_conditions_met + additional_conditions_met])
