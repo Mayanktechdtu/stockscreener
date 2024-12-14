@@ -79,15 +79,15 @@ if selected_tab == "📈 Stock Screener":
 
 
     def calculate_rsi(data, window=14):
-    delta = data['Close'].diff(1)
-    gain = delta.clip(lower=0)
-    loss = -delta.clip(upper=0)
-    avg_gain = gain.rolling(window=window, min_periods=window).mean()
-    avg_loss = loss.rolling(window=window, min_periods=window).mean()
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
-    rsi = rsi.fillna(0)  # Replace NaN with 0 or appropriate value
-    return rsi
+        delta = data['Close'].diff(1)
+        gain = delta.clip(lower=0)
+        loss = -delta.clip(upper=0)
+        avg_gain = gain.rolling(window=window, min_periods=window).mean()
+        avg_loss = loss.rolling(window=window, min_periods=window).mean()
+        rs = avg_gain / avg_loss
+        rsi = 100 - (100 / (1 + rs))
+        rsi = rsi.fillna(0)  # Replace NaN with 0 or appropriate value
+        return rsi
 
 
 
