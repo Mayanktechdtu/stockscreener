@@ -652,19 +652,20 @@ if selected_tab == "📈 Stock Screener":
             # met_additional_conditions = [label for label, cond in zip(additional_condition_labels, additional_conditions_met) if cond]
 
             # Ensure conditions are explicitly evaluated as booleans
+            # Ensure conditions are explicitly evaluated as booleans
             main_conditions_met = [
-                bool(cond_52_week), 
-                bool(cond_fib_52_week), 
-                bool(cond_ath), 
-                bool(cond_52_week_year), 
-                bool(cond_monthly_change), 
-                bool(cond_3month_change), 
-                bool(cond_weekly_change)
+                cond_52_week if isinstance(cond_52_week, bool) else cond_52_week.any(),
+                cond_fib_52_week if isinstance(cond_fib_52_week, bool) else cond_fib_52_week.any(),
+                cond_ath if isinstance(cond_ath, bool) else cond_ath.any(),
+                cond_52_week_year if isinstance(cond_52_week_year, bool) else cond_52_week_year.any(),
+                cond_monthly_change,
+                cond_3month_change,
+                cond_weekly_change
             ]
             
             additional_conditions_met = [
-                bool(cond_rsi), 
-                bool(cond_ema)
+                cond_rsi if isinstance(cond_rsi, bool) else cond_rsi.any(),
+                cond_ema if isinstance(cond_ema, bool) else cond_ema.any()
             ]
             
             # Convert conditions to '✓' for True and '✗' for False
