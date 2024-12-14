@@ -15,5 +15,5 @@ scikit-learn
 scipy
 seaborn
 yfinance
-streamlit==1.20.0
-streamlit-aggrid==0.3.3
+streamlit
+streamlit-aggrid
