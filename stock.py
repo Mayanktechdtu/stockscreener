@@ -653,19 +653,31 @@ if selected_tab == "📈 Stock Screener":
 
             # Ensure conditions are explicitly evaluated as booleans
             # Ensure conditions are explicitly evaluated as booleans
+            def safe_eval_condition(cond):
+                """
+                Safely evaluate a condition to return a scalar boolean.
+                Handles Pandas Series or any non-scalar inputs gracefully.
+                """
+                if isinstance(cond, pd.Series):
+                    return cond.any()  # Use .any() to check if any condition is True
+                elif isinstance(cond, (bool, int, float)):
+                    return bool(cond)  # Convert scalar values to boolean
+                else:
+                    return False  # Default to False if the condition is None or invalid
+            
             main_conditions_met = [
-                cond_52_week if isinstance(cond_52_week, bool) else cond_52_week.any(),
-                cond_fib_52_week if isinstance(cond_fib_52_week, bool) else cond_fib_52_week.any(),
-                cond_ath if isinstance(cond_ath, bool) else cond_ath.any(),
-                cond_52_week_year if isinstance(cond_52_week_year, bool) else cond_52_week_year.any(),
+                safe_eval_condition(cond_52_week),
+                safe_eval_condition(cond_fib_52_week),
+                safe_eval_condition(cond_ath),
+                safe_eval_condition(cond_52_week_year),
                 cond_monthly_change,
                 cond_3month_change,
                 cond_weekly_change
             ]
             
             additional_conditions_met = [
-                cond_rsi if isinstance(cond_rsi, bool) else cond_rsi.any(),
-                cond_ema if isinstance(cond_ema, bool) else cond_ema.any()
+                safe_eval_condition(cond_rsi),
+                safe_eval_condition(cond_ema)
             ]
             
             # Convert conditions to '✓' for True and '✗' for False
@@ -678,6 +690,7 @@ if selected_tab == "📈 Stock Screener":
             # Generate lists of met conditions
             met_main_conditions = [label for label, cond in zip(main_condition_labels, main_conditions_met) if cond]
             met_additional_conditions = [label for label, cond in zip(additional_condition_labels, additional_conditions_met) if cond]
+
 
             result = {
                 "S.No": idx,
