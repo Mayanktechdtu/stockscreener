@@ -78,16 +78,45 @@ if selected_tab == "📈 Stock Screener":
 
 
 
-    def calculate_rsi(data, window=14):
-        delta = data['Close'].diff(1)
-        gain = delta.clip(lower=0)
-        loss = -delta.clip(upper=0)
-        avg_gain = gain.rolling(window=window, min_periods=window).mean()
-        avg_loss = loss.rolling(window=window, min_periods=window).mean()
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        rsi = rsi.fillna(0)  # Replace NaN with 0 or appropriate value
-        return rsi
+
+    def calculate_rsi(data, period=14):
+        """
+        Calculates the RSI (Relative Strength Index) for the given data.
+        
+        Parameters:
+            data (pd.Series): The price data (e.g., closing prices) as a Pandas Series.
+            period (int): The number of periods to calculate RSI (default: 14).
+        
+        Returns:
+            pd.Series: A Series containing the RSI values.
+        """
+        try:
+            if data is None or len(data) < period:
+                # Return None if the data is invalid or not enough data points
+                return None
+            
+            # Calculate price differences
+            delta = data.diff()
+            
+            # Separate gains and losses
+            gains = delta.where(delta > 0, 0)
+            losses = -delta.where(delta < 0, 0)
+    
+            # Calculate the average gain and loss
+            avg_gain = gains.rolling(window=period, min_periods=1).mean()
+            avg_loss = losses.rolling(window=period, min_periods=1).mean()
+    
+            # Calculate the Relative Strength (RS)
+            rs = avg_gain / avg_loss
+    
+            # Calculate the RSI
+            rsi = 100 - (100 / (1 + rs))
+            
+            return rsi
+        except Exception as e:
+            print(f"Error in calculate_rsi: {e}")
+            return None
+
 
 
 
@@ -270,7 +299,10 @@ if selected_tab == "📈 Stock Screener":
                 return False, None, None  # Return False if data is invalid
     
             rsi_daily = calculate_rsi(stock_data)
-    
+            if rsi_daily is None:
+                st.warning("Daily RSI could not be calculated. Please verify the input data.")
+            else:
+                st.write("RSI calculated successfully:", rsi_daily.tail())            
             # Resample weekly data and validate integrity
             stock_data_weekly = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
             if stock_data_weekly.empty:
@@ -697,8 +729,8 @@ if selected_tab == "📈 Stock Screener":
                 "200-Day EMA": round(ema_200.iloc[-1], 2) if len(ema_200) > 0 else None,
                 "Upper Bound (-1 STD)": round(upper_bound_ema, 2) if len(ema_200) > 0 else None,
                 "Lower Bound (-2 STD)": round(lower_bound_ema, 2) if len(ema_200) > 0 else None,
-                "Daily RSI": round(rsi_daily.iloc[-1], 2) if len(rsi_daily) > 0 else None,
-                "Weekly RSI": round(rsi_weekly.iloc[-1], 2) if len(rsi_weekly) > 0 else None,
+                "Daily RSI": round(rsi_daily.iloc[-1], 2) if rsi_daily is not None and len(rsi_daily) > 0 else None,
+                "Weekly RSI": round(rsi_weekly.iloc[-1], 2) if rsi_weekly is not None and len(rsi_weekly) > 0 else None,
             }
 
             st.write("Debug Last Week:", last_week)
