@@ -77,15 +77,18 @@ if selected_tab == "📈 Stock Screener":
         return get_stock_data(symbol, period="max")
 
 
+
     def calculate_rsi(data, window=14):
-        delta = data['Close'].diff(1)
-        gain = delta.where(delta > 0, 0)
-        loss = -delta.where(delta < 0, 0)
-        avg_gain = gain.rolling(window=window, min_periods=1).mean()
-        avg_loss = loss.rolling(window=window, min_periods=1).mean()
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
+    delta = data['Close'].diff(1)
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    avg_gain = gain.rolling(window=window, min_periods=window).mean()
+    avg_loss = loss.rolling(window=window, min_periods=window).mean()
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+    rsi = rsi.fillna(0)  # Replace NaN with 0 or appropriate value
+    return rsi
+
 
 
     def calculate_ema(data, window=200):
@@ -264,21 +267,32 @@ if selected_tab == "📈 Stock Screener":
         try:
             # Validate stock_data integrity
             if stock_data.empty or not {'Open', 'Close'}.issubset(stock_data.columns):
-                raise KeyError("Column(s) ['Close', 'Open'] do not exist in the DataFrame.")
+                return False, None, None  # Return False if data is invalid
     
             rsi_daily = calculate_rsi(stock_data)
     
             # Resample weekly data and validate integrity
             stock_data_weekly = stock_data.resample('W').agg({'Open': 'first', 'Close': 'last'})
             if stock_data_weekly.empty:
-                raise ValueError("Weekly resampled data is empty.")
+                return False, rsi_daily, None
     
             rsi_weekly = calculate_rsi(stock_data_weekly)
-            condition_met = (rsi_daily.iloc[-1] < 30) or (rsi_weekly.iloc[-1] < 30)
+    
+            # Get the last RSI values, handling NaN
+            rsi_daily_last = rsi_daily.iloc[-1] if not rsi_daily.empty else np.nan
+            rsi_weekly_last = rsi_weekly.iloc[-1] if not rsi_weekly.empty else np.nan
+    
+            # Check conditions, ensuring they are booleans
+            daily_condition = rsi_daily_last < 30 if not np.isnan(rsi_daily_last) else False
+            weekly_condition = rsi_weekly_last < 30 if not np.isnan(rsi_weekly_last) else False
+    
+            condition_met = daily_condition or weekly_condition
+    
             return condition_met, rsi_daily, rsi_weekly
         except Exception as e:
             st.error(f"Exception in check_rsi_condition: {e}")
             return False, None, None
+
 
 
 
@@ -608,9 +622,8 @@ if selected_tab == "📈 Stock Screener":
             if not stock_data_full.empty:
                 cond_ath, current_price_ath, low_limit_ath, high_limit_ath, ath = check_all_time_high_condition(stock_data_full)
             else:
-                cond_ath, current_price_ath, low_limit_ath, high_limit_ath, ath = (False, None, None, None, None)
-
-
+                cond_ath, current_price_ath, low_limit_ath, high_limit_ath, ath = False, None, None, None, None
+    
             # Check other conditions...
             percentage_change, week_to_week_change, last_week = check_conditions_and_get_percentage_change(data)
             cond_52_week, lower_bound, upper_bound, high_52_week, low_52_week = check_52_week_condition(data)
@@ -619,77 +632,44 @@ if selected_tab == "📈 Stock Screener":
             cond_52_week_year, low_limit_52_week_year, high_limit_52_week_year, high_52_week_year = check_52_week_high_yearly_condition(data)
             cond_rsi, rsi_daily, rsi_weekly = check_rsi_condition(data)
             cond_ema, ema_200, upper_bound_ema, lower_bound_ema = check_ema_condition(data)
-            todays_change = round(calculate_percentage_change(data['Close'].iloc[-1], data['Close'].iloc[-2]), 2)
+            todays_change = round(calculate_percentage_change(data['Close'].iloc[-1], data['Close'].iloc[-2]), 2) if len(data) > 1 else 0
             monthly_change = calculate_monthly_change(data)
             three_month_change = calculate_3month_change(data)
-
-
-            # Additional main conditions
-            # cond_monthly_change = (monthly_change is not None and monthly_change < -8)
-            # cond_weekly_change = (percentage_change < -5)
-            # cond_3month_change = (three_month_change is not None and three_month_change < -10)
-
-
-            # # Collect results
-            # main_conditions_met = [
-            #     cond_52_week, cond_fib_52_week, cond_ath, cond_52_week_year, cond_monthly_change, cond_3month_change, cond_weekly_change
-            # ]
+    
             # Additional main conditions
             cond_monthly_change = (monthly_change is not None and monthly_change < -8)
             cond_weekly_change = (percentage_change is not None and percentage_change < -5)
             cond_3month_change = (three_month_change is not None and three_month_change < -10)
-            
-            # main_conditions_met = [
-            #     cond_52_week, cond_fib_52_week, cond_ath, cond_52_week_year, 
-            #     cond_monthly_change, cond_3month_change, cond_weekly_change
-            # ]
-
-            # additional_conditions_met = [cond_rsi, cond_ema]
-            # conditions_met_count = sum(main_conditions_met) + sum(additional_conditions_met)
-            # conditions_html = ''.join(['✓' if cond else '✗' for cond in main_conditions_met + additional_conditions_met])
-            # conditions_score = f"{conditions_met_count}/{len(main_conditions_met) + len(additional_conditions_met)}"
-            # met_main_conditions = [label for label, cond in zip(main_condition_labels, main_conditions_met) if cond]
-            # met_additional_conditions = [label for label, cond in zip(additional_condition_labels, additional_conditions_met) if cond]
-
-            # Ensure conditions are explicitly evaluated as booleans
-            # Ensure conditions are explicitly evaluated as booleans
-            def safe_eval_condition(cond):
-                """
-                Safely evaluate a condition to return a scalar boolean.
-                Handles Pandas Series or any non-scalar inputs gracefully.
-                """
-                if isinstance(cond, pd.Series):
-                    return cond.any()  # Use .any() to check if any condition is True
-                elif isinstance(cond, (bool, int, float)):
-                    return bool(cond)  # Convert scalar values to boolean
-                else:
-                    return False  # Default to False if the condition is None or invalid
-            
+    
+            # Ensure conditions are scalar booleans
+            def to_bool(cond):
+                return bool(cond) if isinstance(cond, (bool, np.bool_)) else False
+    
             main_conditions_met = [
-                safe_eval_condition(cond_52_week),
-                safe_eval_condition(cond_fib_52_week),
-                safe_eval_condition(cond_ath),
-                safe_eval_condition(cond_52_week_year),
-                cond_monthly_change,
-                cond_3month_change,
-                cond_weekly_change
+                to_bool(cond_52_week),
+                to_bool(cond_fib_52_week),
+                to_bool(cond_ath),
+                to_bool(cond_52_week_year),
+                to_bool(cond_monthly_change),
+                to_bool(cond_3month_change),
+                to_bool(cond_weekly_change)
             ]
-            
-            additional_conditions_met = [
-                safe_eval_condition(cond_rsi),
-                safe_eval_condition(cond_ema)
-            ]
-            
+            additional_conditions_met = [to_bool(cond_rsi), to_bool(cond_ema)]
+    
             # Convert conditions to '✓' for True and '✗' for False
             conditions_html = ''.join(['✓' if cond else '✗' for cond in main_conditions_met + additional_conditions_met])
-            
+    
             # Calculate the score
             conditions_met_count = sum(main_conditions_met) + sum(additional_conditions_met)
             conditions_score = f"{conditions_met_count}/{len(main_conditions_met) + len(additional_conditions_met)}"
-            
+    
             # Generate lists of met conditions
             met_main_conditions = [label for label, cond in zip(main_condition_labels, main_conditions_met) if cond]
             met_additional_conditions = [label for label, cond in zip(additional_condition_labels, additional_conditions_met) if cond]
+
+        # Proceed with the rest of your code...
+
+
 
 
             result = {
